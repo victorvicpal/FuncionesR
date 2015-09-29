@@ -1,0 +1,13 @@
+Beta2 <- function(player)
+{
+	load("LogReg.Rdata")
+	SQL <- paste("select player, x ,y , if(result='made',1,0) as result, if(type='3pt',1,0) as triple from nba.play_by_play where etype='shot' and y>3 and game_id in (select id from nba.game where season='07-08') and player='",player,"';", sep="")
+	M <- dbGetQuery(con,SQL)
+	M$triple <- as.factor(M$triple)
+	output <- glm(result ~ triple*x + triple*y + triple + triple*I(x^2) + triple*I(y^2), data = M, family = binomial)
+	LogReg <- logistic.regression.or.ci(output)
+	TabBeta <- as.data.frame(LogReg$regression.table$coefficients)
+	Estimate <- TabBeta$Estimate
+	names(Estimate) <- rownames(TabBeta)
+	Estimate
+}
