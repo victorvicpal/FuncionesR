@@ -1,0 +1,53 @@
+DrawPlayer2 <- function(player,season)
+{
+
+load('Pxy2.Rdata')
+A <- Pxy2(player,season)
+
+library(ggplot2)
+library(jpeg)
+library(grid)
+
+myurl <- "http://img.archiexpo.es/images_ae/photo-g/parquet-macizo-madera-aceitado-56938-6385459.jpg"
+z <- tempfile()
+download.file(myurl,z,mode="wb")
+img <- readJPEG(z)
+file.remove(z)
+
+ggplot(data=data.frame(x=1,y=2),aes(x,y))+
+annotation_custom(rasterGrob(img, width=unit(1,"npc"), height=unit(1,"npc")), -Inf, Inf, -Inf, Inf) +
+   ###Tile + Contour
+geom_tile(aes(x=x,y=y,fill=p), data = A, size=0.1) +
+stat_contour(aes(z=p),data=A,bins = 15, binwidth=2,colour='white') +
+scale_fill_gradient2(low="blue",mid="orange", high="red",space = "Lab",midpoint = mean(p),limits=c(0,1)) +
+theme_bw() +
+   ### Contour
+#stat_contour(aes(x=x,y=y,z=p,colour = ..level..),data=A,bins = 15, binwidth=10, size = 2) +
+#scale_colour_gradient(low = "orange", high = "red") +
+    ### Contour areas
+ #stat_contour(aes(x=x,y=y,z=p,fill=..level..),data=A,geom="polygon") +
+ #scale_fill_gradient(low = "yellow", high = "red") +
+   ###outside box:
+geom_path(data=data.frame(x=c(0,0,50,50,0),y=c(0,47,47,0,0)))+
+   ###solid FT semicircle above FT line:
+geom_path(data=data.frame(x=(25+c(-6000:(-1)/1000,1:6000/1000)),y=c(19+sqrt(6^2-c(-6000:(-1)/1000,1:6000/1000)^2))),aes(x=x,y=y))+
+   ###dashed FT semicircle below FT line:
+geom_path(data=data.frame(x=(25+c(-6000:(-1)/1000,1:6000/1000)),y=c(19-sqrt(6^2-c(-6000:(-1)/1000,1:6000/1000)^2))),aes(x=x,y=y),linetype='dashed')+
+   ###key:
+geom_path(data=data.frame(x=c(17,17,33,33,17),y=c(0,19,19,0,0)))+
+   ###box inside the key:
+geom_path(data=data.frame(x=c(19,19,31,31,19),y=c(0,19,19,0,0)))+
+   ###restricted area semicircle:
+geom_path(data=data.frame(x=(25+c(-4000:(-1)/1000,1:4000/1000)),y=c(5.25+sqrt(4^2-c(-4000:(-1)/1000,1:4000/1000)^2))),aes(x=x,y=y))+
+   ###halfcourt semicircle:
+geom_path(data=data.frame(x=(25+c(-6000:(-1)/1000,1:6000/1000)),y=c(47-sqrt(6^2-c(-6000:(-1)/1000,1:6000/1000)^2))),aes(x=x,y=y))+
+   ###rim:
+geom_path(data=data.frame(x=(25+c(-750:(-1)/1000,1:750/1000,750:1/1000,-1:-750/1000)),y=c(c(5.25+sqrt(0.75^2-c(-750:(-1)/1000,1:750/1000)^2)),c(5.25-sqrt(0.75^2-c(750:1/1000,-1:-750/1000)^2)))),aes(x=x,y=y))+
+   ###backboard:
+geom_path(data=data.frame(x=c(22,28),y=c(4,4)),lineend='butt')+
+   ###three-point line:
+geom_path(data=data.frame(x=c(3,3,25+c(-22000:(-1)/1000,1:22000/1000),47,47),y=c(0,169/12,5.25+sqrt(23.75^2-c(-22000:(-1)/1000,1:22000/1000)^2),169/12,0)),aes(x=x,y=y))+
+   ###fix aspect ratio to 1:1
+ggtitle(player) +
+coord_fixed()
+}

@@ -1,9 +1,13 @@
-Pxy <- function(player,season,x,y)
+Pxy <- function(player,season)
 {
 	require(Coeficientes)
 	
 	#Coefficients
 	coef <- Coeficientes(player,season)
+
+	#Define x and y
+	x <- seq(0,50,0.1)
+	y <- seq(5.25,40,0.1)
 
 	#Grid xy
 	A <- expand.grid(x,y)

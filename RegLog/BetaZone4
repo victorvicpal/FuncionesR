@@ -1,0 +1,82 @@
+BetaZone4 <- function(player,season)
+{
+    #Required packages
+    require(logistf)
+    require(aod)
+
+	#SQL <- paste("select player, x ,y , if(result='made',1,0) as result, if(x<3 or x>47,1,if(y>(sqrt(pow(23.71,2)-Pow((x-25),2))+5.25),1,0)) as triple,if(y<=10 and x>=17 and x<=33,1,0) as zone1,if(y<=19 and y>10 and x>=17 and x<=33,1,0) as zone2,if(x>=17 and x<=33 and y>19 and (y>=((13.75/(-8))*(x-25)+5.25)) and (y>=((13.75/8)*(x-25)+5.25)) and y<=(sqrt(pow(23.71,2)-Pow((x-25),2))+5.25),1,0) as zone3,if(x<17 and x>=3 and (y<((13.75/(-8))*(x-25)+5.25)) and y<=(sqrt(pow(23.71,2)-Pow((x-25),2))+5.25),1,0) as zone4,if(x>33 and x<=47 and (y<((13.75/8)*(x-25)+5.25)) and y<=(sqrt(pow(23.71,2)-Pow((x-25),2))+5.25),1,0) as zone5 from nba.play_by_play where etype='shot' and y>3 and game_id in (select id from nba.game where season='",season,"') and player='",player,"';", sep="")
+	SQL <- paste("select player, x ,y , if(result='made',1,0) as result, if(x<3 or x>47,1,if(y>(sqrt((23.71*23.71)-(x-25)*(x-25))+5.25),1,0)) as triple,if(y<=10 and x>=17 and x<=33,1,0) as zone1,if(y<=19 and y>10 and x>=17 and x<=33,1,0) as zone2,if(y>19 and (y>=((13.75/(-8))*(x-25)+5.25)) and (y>=((13.75/8)*(x-25)+5.25)) and y<=(sqrt((23.71*23.71)-(x-25)*(x-25))+5.25),1,0) as zone3,if(x<17 and x>=3 and (y<((13.75/(-8))*(x-25)+5.25)) and y<=(sqrt((23.71*23.71)-(x-25)*(x-25))+5.25),1,0) as zone4,if(x>33 and x<=47 and (y<((13.75/8)*(x-25)+5.25)) and y<=(sqrt((23.71*23.71)-(x-25)*(x-25))+5.25),1,0) as zone5 from nba.play_by_play where etype='shot' and y>3 and game_id in (select id from nba.game where season='",season,"') and player='",player,"';", sep="")
+	M <- dbGetQuery(con,SQL)
+
+    #Matrix exploration
+    Means <- apply(M[,5:10],2,mean)
+    ZonePerc <- apply(M[,5:10],2,function(x,y) length(x[x==1 & y==1])/length(x[x==1]), y=M$result)
+
+    #Triple or not
+    if (Means[1]<0.1) {Means <- Means[-1]}
+
+    Means <- Means[Means!=0]
+
+    xnom <- names(Means)
+    minm <- names(Means[which.min(Means)])
+
+
+    #Initial formula
+    form <- paste0('(1+',paste0(xnom,collapse = '+'),')')
+    formula <- as.formula(paste0('result~(x+y+x*y+I(x^2)+I(y^2))*',form))
+
+    #All zone model (logistic regression)
+    M[,5:10] <- apply(M[,5:10],2,factor)
+    output <- logistf(formula,data=M,pl=FALSE)
+cat("LR first= ", (output$loglik[2]-output$loglik[1])*2, "\n")
+    #First Wald Test
+    t <- try(wald.test(b= coef(output), Sigma= vcov(output), Terms = 1:output$df[1]))
+    op <- 0
+
+    while ("try-error" %in% class(t))
+    {
+        op <- op+1
+        minm <- names(Means[which.min(Means)])
+        Means <- Means[-which.min(Means)]
+        form <- gsub(paste0('[+]',minm),'',form)
+        formula <- as.formula(paste0('result~(x+y+x*y+I(x^2)+I(y^2))*',form))
+        output <- logistf(formula,data=M,pl=FALSE)
+        t <- try(wald.test(b=coef(output), Sigma=vcov(output), Terms = 1:output$df[1]))
+        cat("iteration1 nº= ", op, "\n")
+        if (op==5) {break}
+    }
+cat("iteration1 = ", op, "\n")
+cat("LR second= ", (output$loglik[2]-output$loglik[1])*2, "\n")
+print(output)
+print(t)
+
+    cont <- 0
+
+    #Errores en el bucle siguiente - Probar con LR ~ 5
+    while (t$result$chi2[3]>0.05)
+    {
+        cont <- cont+1
+        minm <- names(Means[which.min(Means)])
+        Means <- Means[-which.min(Means)]
+        form <- gsub(paste0('[+]',minm),'',form)
+        formula <- as.formula(paste0('result~(x+y+x*y+I(x^2)+I(y^2))*',form))
+        output <- logistf(formula,data=M,pl=FALSE)
+        t <- try(wald.test(b=coef(output), Sigma=vcov(output), Terms = 1:output$df[1]))
+        cat("iteration2 nº = ", cont, "\n")
+        print(output)
+        print(t)
+        if (cont==5-op) {break}
+    }
+
+cat('---------------------------------------------------------', "\n")
+LR <- (output$loglik[2]-output$loglik[1])*2
+
+cat('SUMMARY','\n')
+cat('---------------------------------------------------------', "\n")
+cat("FG% zones ", "\n")
+print(ZonePerc)
+cat("iteration1 = ", op, "\n")
+cat("iteration2 = ", cont, "\n")
+cat("LRfinal = ", LR, "\n")
+
+}
