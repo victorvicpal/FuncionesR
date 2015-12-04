@@ -1,0 +1,42 @@
+library(ggplot2)
+library(jpeg)
+library(grid)
+
+ggplot(data=data.frame(x=1,y=2),aes(x,y))+
+   ###Points
+theme_bw() +
+   ###Zones
+geom_polygon(data=data.frame(x=c(17,33,33,17,17),y=c(3,3,10,10,3)),fill="blue",alpha=0.8)+
+annotate("text", x = 25, y = 7.3, label = "Z[1]",parse = TRUE,colour="white",fontface="bold",size=14)+
+geom_polygon(data=data.frame(x=c(17,33,33,17,17),y=c(10,10,19,19,10)),fill="blue",alpha=0.6)+
+annotate("text", x = 25, y = 15, label = "Z[2]",parse = TRUE,colour="white",fontface="bold",size=14)+
+geom_polygon(data=data.frame(x=c(17,33,36.92361,25+c(-12000:(-1)/1000,1:12000/1000),13.07639,17),y=c(19,19,25.7437,5.25+sqrt(23.75^2-c(-12000:(-1)/1000,1:12000/1000)^2),25.7437,19)),fill="blue",alpha=0.4)+
+annotate("text", x = 25, y = 22, label = "Z[3]",parse = TRUE,colour="white",fontface="bold",size=14)+
+geom_polygon(data=data.frame(x=c(3,3,seq(3,13.07639,1/1000),13.07639,17,17,3),y=c(3,169/12,5.25+sqrt(23.75^2-(seq(3,13.07639,1/1000)-25)^2),25.7437,19,3,3)),fill="blue",alpha=0.2)+
+annotate("text", x = 10, y = 12, label = "Z[4]",parse = TRUE,fontface="bold",size=14)+
+geom_polygon(data=data.frame(x=c(33,33,36.92361,seq(36.92361,47,1/1000),47,47,33),y=c(3,19,25.7437,5.25+sqrt(23.75^2-(seq(36.92361,47,1/1000)-25)^2),169/12,3,3)),fill="blue",alpha=0.2)+
+annotate("text", x = 40, y = 12, label = "Z[5]",parse = TRUE,fontface="bold",size=14)+
+geom_polygon(data=data.frame(x=c(0,0,seq(0,50,1/1000),50,50,47,47,rev(seq(3,47,1/1000)),3,3,0),y=c(3,25.225,5.25+sqrt(32^2-(seq(0,50,1/1000)-25)^2),25.225,3,3,169/12,5.25+sqrt(23.75^2-(rev(seq(3,47,1/1000))-25)^2),169/12,3,3)),fill="blue",alpha=0.5)+
+annotate("text", x = 25, y = 33, label = "Z[6]",parse = TRUE,colour="white",fontface="bold",size=14)+
+   ###outside box:
+geom_path(data=data.frame(x=c(0,0,50,50,0),y=c(0,47,47,0,0)))+
+   ###solid FT semicircle above FT line:
+geom_path(data=data.frame(x=(25+c(-6000:(-1)/1000,1:6000/1000)),y=c(19+sqrt(6^2-c(-6000:(-1)/1000,1:6000/1000)^2))),aes(x=x,y=y))+
+   ###dashed FT semicircle below FT line:
+geom_path(data=data.frame(x=(25+c(-6000:(-1)/1000,1:6000/1000)),y=c(19-sqrt(6^2-c(-6000:(-1)/1000,1:6000/1000)^2))),aes(x=x,y=y),linetype='dashed')+
+   ###key:
+geom_path(data=data.frame(x=c(17,17,33,33,17),y=c(0,19,19,0,0)))+
+   ###box inside the key:
+geom_path(data=data.frame(x=c(19,19,31,31,19),y=c(0,19,19,0,0)))+
+   ###restricted area semicircle:
+geom_path(data=data.frame(x=(25+c(-4000:(-1)/1000,1:4000/1000)),y=c(5.25+sqrt(4^2-c(-4000:(-1)/1000,1:4000/1000)^2))),aes(x=x,y=y))+
+   ###halfcourt semicircle:
+geom_path(data=data.frame(x=(25+c(-6000:(-1)/1000,1:6000/1000)),y=c(47-sqrt(6^2-c(-6000:(-1)/1000,1:6000/1000)^2))),aes(x=x,y=y))+
+   ###rim:
+geom_path(data=data.frame(x=(25+c(-750:(-1)/1000,1:750/1000,750:1/1000,-1:-750/1000)),y=c(c(5.25+sqrt(0.75^2-c(-750:(-1)/1000,1:750/1000)^2)),c(5.25-sqrt(0.75^2-c(750:1/1000,-1:-750/1000)^2)))),aes(x=x,y=y))+
+   ###backboard:
+geom_path(data=data.frame(x=c(22,28),y=c(4,4)),lineend='butt')+
+   ###three-point line:
+geom_path(data=data.frame(x=c(3,3,25+c(-22000:(-1)/1000,1:22000/1000),47,47),y=c(0,169/12,5.25+sqrt(23.75^2-c(-22000:(-1)/1000,1:22000/1000)^2),169/12,0)),aes(x=x,y=y))+
+   ###fix aspect ratio to 1:1
+coord_fixed()
